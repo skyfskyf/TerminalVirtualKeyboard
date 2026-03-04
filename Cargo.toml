@@ -3,8 +3,21 @@ name = "tvk"
 version = "0.1.0"
 edition = "2024"
 
+[lib]
+name = "tvk"
+path = "src/lib.rs"
+
+[[bin]]
+name = "tvk"
+path = "src/main.rs"
+required-features = ["binary"]
+
 [dependencies]
 thiserror = "2.0.18"
-ratatui = { version = "0.30.0", features = ["crossterm"]}
-rdev = "0.5.3"
-clap = { version = "4.5.56", features = ["derive"] }
+ratatui = "0.30.0"
+rdev = { version = "0.5.3", optional = true }
+clap = { version = "4.5.56", features = ["derive"], optional = true }
+
+[features]
+default = ["binary"]
+binary = ["rdev", "ratatui/crossterm", "clap"]

@@ -1,14 +1,14 @@
 use ratatui::layout::{Alignment, Constraint, Direction, Layout as TuiLayout};
 use ratatui::{prelude::*, widgets::*};
-use rdev::Key;
 use std::collections::HashSet;
 
 use crate::env::*;
 use crate::layout::Layout;
+use crate::virtual_key::VirtualKey;
 
 pub fn render_ui(
     f: &mut Frame,
-    pressed_keys: &HashSet<Key>,
+    pressed_keys: &HashSet<VirtualKey>,
     kps: usize,
     kbd_layout: &Layout,
     env: &Env,

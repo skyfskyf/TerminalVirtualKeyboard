@@ -1,13 +1,8 @@
-mod lexer;
-use lexer::*;
-mod parser;
-use parser::*;
-mod layout;
-mod render;
-mod error;
-use error::*;
-mod env;
-use env::*;
+use tvk::lexer::*;
+use tvk::parser::*;
+use tvk::error::*;
+use tvk::env::*;
+use tvk::virtual_key::*;
 
 use ratatui::crossterm::{
     event::{self, Event, KeyCode},
@@ -15,7 +10,7 @@ use ratatui::crossterm::{
     ExecutableCommand,
 };
 use ratatui::{prelude::*};
-use rdev::{listen, EventType, Key};
+use rdev::{listen, EventType};
 use std::{
     collections::HashSet,
     io::stdout,
@@ -33,7 +28,7 @@ pub struct Args {
 }
 
 struct AppState {
-    pressed_keys: HashSet<Key>,
+    pressed_keys: HashSet<VirtualKey>,
     kps_events: Vec<Instant>,
 }
 
@@ -63,11 +58,15 @@ fn main() -> Result<(), AppError> {
             let mut s = state_clone.lock().unwrap();
             match event.event_type {
                 EventType::KeyPress(key) => {
-                    s.pressed_keys.insert(key);
-                    s.kps_events.push(Instant::now());
+                    if let Some(vk) = virtual_key_from_rdev(&key) {
+                        s.pressed_keys.insert(vk);
+                        s.kps_events.push(Instant::now());
+                    }
                 }
                 EventType::KeyRelease(key) => {
-                    s.pressed_keys.remove(&key);
+                    if let Some(vk) = virtual_key_from_rdev(&key) {
+                        s.pressed_keys.remove(&vk);
+                    }
                 }
                 _ => {}
             }
@@ -87,7 +86,7 @@ fn main() -> Result<(), AppError> {
             s.kps_events.retain(|&t| now.duration_since(t) < Duration::from_secs(1));
             let kps = s.kps_events.len();
 
-            render::render_ui(f, &s.pressed_keys, kps, &layout, &env);
+            tvk::render::render_ui(f, &s.pressed_keys, kps, &layout, &env);
         })?;
 
         if event::poll(Duration::from_millis(16))? {
@@ -101,5 +100,3 @@ fn main() -> Result<(), AppError> {
     stdout().execute(LeaveAlternateScreen)?;
     Ok(())
 }
-
-

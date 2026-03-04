@@ -1,6 +1,7 @@
 use ratatui::style::Color;
-use rdev::Key;
 use std::sync::Arc;
+
+use crate::virtual_key::VirtualKey;
 
 #[derive(Debug)]
 pub struct Layout {
@@ -33,5 +34,5 @@ impl Attr {
 #[derive(Debug)]
 pub struct Button {
     pub attr: Attr,
-    pub binds: Vec<(Arc<str>, Option<Key>)>,
+    pub binds: Vec<(Arc<str>, Option<VirtualKey>)>,
 }

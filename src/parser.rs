@@ -2,8 +2,8 @@ use crate::env::*;
 use crate::error::*;
 use crate::layout::*;
 use crate::lexer::*;
+use crate::virtual_key::*;
 use ratatui::style::Color;
-use rdev::Key;
 use std::sync::Arc;
 #[derive(Debug)]
 pub struct Parser {
@@ -115,14 +115,14 @@ impl Parser {
             let name_token = self.consume(TokenType::Name)?;
             let name_str = name_token.value.clone();
             let mut binds = vec![];
-            binds.push((Arc::from(name_str.as_str()), get_rdev_key(&name_str)));
+            binds.push((Arc::from(name_str.as_str()), virtual_key_from_name(&name_str)));
             let mut attr = Attr::default(&name_str);
 
             while self.peek()?.token_type == TokenType::Comma {
                 self.consume(TokenType::Comma)?;
                 let name_token = self.consume(TokenType::Name)?;
                 let name_str = name_token.value.clone();
-                binds.push((Arc::from(name_str.as_str()), get_rdev_key(&name_str)));
+                binds.push((Arc::from(name_str.as_str()), virtual_key_from_name(&name_str)));
             }
 
             if self.peek()?.token_type == TokenType::LBracket {
@@ -202,64 +202,10 @@ impl Parser {
     }
 }
 
-fn get_rdev_key(name: &str) -> Option<Key> {
-    match name.to_lowercase().as_str() {
-        "esc" | "escape" => Some(Key::Escape),
-        "1" => Some(Key::Num1),
-        "2" => Some(Key::Num2),
-        "3" => Some(Key::Num3),
-        "4" => Some(Key::Num4),
-        "5" => Some(Key::Num5),
-        "6" => Some(Key::Num6),
-        "7" => Some(Key::Num7),
-        "8" => Some(Key::Num8),
-        "9" => Some(Key::Num9),
-        "0" => Some(Key::Num0),
-        "back" | "backspace" => Some(Key::Backspace),
-        "tab" => Some(Key::Tab),
-        "q" => Some(Key::KeyQ),
-        "w" => Some(Key::KeyW),
-        "e" => Some(Key::KeyE),
-        "r" => Some(Key::KeyR),
-        "t" => Some(Key::KeyT),
-        "y" => Some(Key::KeyY),
-        "u" => Some(Key::KeyU),
-        "i" => Some(Key::KeyI),
-        "o" => Some(Key::KeyO),
-        "p" => Some(Key::KeyP),
-        "enter" | "return" => Some(Key::Return),
-        "caps" | "capslock" => Some(Key::CapsLock),
-        "a" => Some(Key::KeyA),
-        "s" => Some(Key::KeyS),
-        "d" => Some(Key::KeyD),
-        "f" => Some(Key::KeyF),
-        "g" => Some(Key::KeyG),
-        "h" => Some(Key::KeyH),
-        "j" => Some(Key::KeyJ),
-        "k" => Some(Key::KeyK),
-        "l" => Some(Key::KeyL),
-        "lshift" | "shift" => Some(Key::ShiftLeft),
-        "rshift" => Some(Key::ShiftRight),
-        "z" => Some(Key::KeyZ),
-        "x" => Some(Key::KeyX),
-        "c" => Some(Key::KeyC),
-        "v" => Some(Key::KeyV),
-        "b" => Some(Key::KeyB),
-        "n" => Some(Key::KeyN),
-        "m" => Some(Key::KeyM),
-        "ctrl" | "lctrl" => Some(Key::ControlLeft),
-        "rctrl" => Some(Key::ControlRight),
-        "alt" | "lalt" => Some(Key::Alt),
-        "ralt" | "altgr" => Some(Key::AltGr),
-        "space" => Some(Key::Space),
-        _ => None,
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rdev::Key;
+    use crate::virtual_key::VirtualKey;
 
     // Helper to create a Name token
     fn t_name(val: &str) -> Token {
@@ -302,9 +248,9 @@ mod tests {
 
         assert_eq!(result.layer.len(), 1);
         assert_eq!(result.layer[0][0].binds[0].0.as_ref(), "Tab");
-        assert_eq!(result.layer[0][0].binds[0].1, Some(Key::Tab));
+        assert_eq!(result.layer[0][0].binds[0].1, Some(VirtualKey::Tab));
         assert_eq!(result.layer[0][1].binds[0].0.as_ref(), "P");
-        assert_eq!(result.layer[0][1].binds[0].1, Some(Key::KeyP));
+        assert_eq!(result.layer[0][1].binds[0].1, Some(VirtualKey::KeyP));
     }
 
     #[test]
@@ -381,10 +327,10 @@ mod tests {
         let result = parser.parse(&mut Env::new()).unwrap();
         assert_eq!(result.layer.len(), 1);
         assert_eq!(result.layer[0][0].binds[0].0.as_ref(), "Tab");
-        assert_eq!(result.layer[0][0].binds[0].1, Some(Key::Tab));
+        assert_eq!(result.layer[0][0].binds[0].1, Some(VirtualKey::Tab));
         assert_eq!(result.layer[0][0].attr.width, 10);
         assert_eq!(result.layer[0][1].binds[0].0.as_ref(), "P");
-        assert_eq!(result.layer[0][1].binds[0].1, Some(Key::KeyP));
+        assert_eq!(result.layer[0][1].binds[0].1, Some(VirtualKey::KeyP));
         assert_eq!(result.layer[0][1].attr.width, 4);
     }
 
@@ -468,7 +414,7 @@ mod tests {
         let result = parser.parse(&mut Env::new()).unwrap();
         assert_eq!(result.layer.len(), 1);
         assert_eq!(result.layer[0][0].binds[0].0.as_ref(), "Tab");
-        assert_eq!(result.layer[0][0].binds[0].1, Some(Key::Tab));
+        assert_eq!(result.layer[0][0].binds[0].1, Some(VirtualKey::Tab));
         assert_eq!(result.layer[0][0].attr.width, 10);
         assert_eq!(result.layer[0][0].attr.border_color, Some(Color::Rgb(1, 1, 1)));
     }
@@ -518,13 +464,13 @@ mod tests {
         assert_eq!(
             result.layer[0][0].binds,
             [
-                (Arc::from("A"), Some(Key::KeyA)),
-                (Arc::from("C"), Some(Key::KeyC)),
-                (Arc::from("D"), Some(Key::KeyD)),
+                (Arc::from("A"), Some(VirtualKey::KeyA)),
+                (Arc::from("C"), Some(VirtualKey::KeyC)),
+                (Arc::from("D"), Some(VirtualKey::KeyD)),
             ]
         );
         assert_eq!(result.layer[0][1].binds[0].0.as_ref(), "B");
-        assert_eq!(result.layer[0][1].binds[0].1, Some(Key::KeyB));
+        assert_eq!(result.layer[0][1].binds[0].1, Some(VirtualKey::KeyB));
         assert_eq!(result.layer[0][1].attr.width, 4);
     }
 
@@ -645,15 +591,15 @@ mod tests {
         assert_eq!(
             button_1.binds,
             vec![
-                (Arc::from("A"), Some(Key::KeyA)),
-                (Arc::from("C"), Some(Key::KeyC)),
-                (Arc::from("D"), Some(Key::KeyD)),
+                (Arc::from("A"), Some(VirtualKey::KeyA)),
+                (Arc::from("C"), Some(VirtualKey::KeyC)),
+                (Arc::from("D"), Some(VirtualKey::KeyD)),
             ]
         );
 
         let button_2 = &result.layer[0][1];
         assert_eq!(button_2.binds[0].0.as_ref(), "B");
-        assert_eq!(button_2.binds[0].1, Some(Key::KeyB));
+        assert_eq!(button_2.binds[0].1, Some(VirtualKey::KeyB));
         assert_eq!(button_2.attr.width, 4);
     }
 }
